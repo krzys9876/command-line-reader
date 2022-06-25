@@ -47,5 +47,33 @@ object Main extends App {
   println(e.get)
   println(f.get)
 
+  val aT:ArgumentT[Int]=ArgumentT(argsProcessor("a").get,0)
+  val bT:ArgumentT[String]=ArgumentT(argsProcessor("b").get,"")
+  val cT:ArgumentT[String]=ArgumentT(argsProcessor("c").get,"")
+  val dT:ArgumentT[Boolean]=ArgumentT(argsProcessor("d").get,false)
+  val eT:ArgumentT[LocalDate]=ArgumentT(argsProcessor("e").get,LocalDate.of(2022,1,1))
+  val fT:ArgumentT[LocalDateTime]=ArgumentT(argsProcessor("f").get,LocalDateTime.of(2022,1,1,1,2,3))
+
+  println(aT.toString)
+  println(bT.toString)
+  println(cT.toString)
+  println(dT.toString)
+  println(eT.toString)
+  println(fT.toString)
+
+  val aTv:Int=aT
+  val bTv:String=bT
+  val cTv:String=cT
+  val dTv:Boolean=dT
+  val eTv:LocalDate=eT
+  val fTv:LocalDateTime=fT
+
+  println(aTv)
+  println(bTv)
+  println(cTv)
+  println(dTv)
+  println(eTv)
+  println(fTv)
+
 }
 

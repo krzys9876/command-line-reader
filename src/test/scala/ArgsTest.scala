@@ -86,5 +86,14 @@ class ArgsTest extends AnyFeatureSpec with GivenWhenThen {
       assert(processed.named.toSet == Set(Argument("aaa-a","1"),Argument("bbb-b","2"),Argument("ccc-c","3")))
       assert(processed.positional == List("a-b-c-d-e-f"))
     }
+    Scenario("named arg may have empty value") {
+      Given("named args with explicit empty value (e.g. key=)")
+      val args = Array("--aaa=", "-bbb=2", "-ccc=")
+      When("args are processed")
+      val processed = ArgsProcessor(args)
+      Then("arguments with empty value are correctly passed")
+      assert(processed.named.toSet == Set(Argument("aaa",""),Argument("bbb","2"),Argument("ccc","")))
+      assert(processed.positional.isEmpty)
+    }
   }
 }

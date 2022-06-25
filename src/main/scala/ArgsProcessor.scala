@@ -6,6 +6,7 @@ case class ArgsProcessor(named:List[Argument],positional: List[String])
 
 object ArgsProcessor {
   val keyPrefixes=List("--","-")
+  val assignment="="
 
   def apply(args:Array[String]):ArgsProcessor = {
     val argsPreprocessed=preProcess(args.toList)
@@ -19,7 +20,7 @@ object ArgsProcessor {
   private def preProcess(toProcess:List[String], processed:List[String]=List()) : List[String]={
     toProcess match {
       case head::tail if isNamed(head) => preProcess(tail,processed ++ List(head))
-      case head1::head2::tail if isNamed(head1+"="+head2) => preProcess(tail,processed ++ List(head1+"="+head2))
+      case head1::head2::tail if isNamed(head1+assignment+head2) => preProcess(tail,processed ++ List(head1+assignment+head2))
       case _ => processed ++ toProcess
     }
   }
@@ -27,12 +28,11 @@ object ArgsProcessor {
   private def isNamed(value:String):Boolean =
     !value.isBlank &&
       keyPrefixes.exists(value.startsWith) &&
-      !value.startsWith("=") &&
-      !value.endsWith("=") &&
-      value.contains("=")
+      !value.startsWith(assignment) &&
+      value.contains(assignment)
 
   private def splitNamed(namedText: String):Argument = {
-    val splitPos=namedText.indexOf('=')
+    val splitPos=namedText.indexOf(assignment)
     val key=namedText.substring(0,splitPos)
     val keyReplaced=removePrefix(key)
     val value=namedText.substring(splitPos+1)
@@ -42,12 +42,6 @@ object ArgsProcessor {
   private def removePrefix(key:String):String=
     keyPrefixes.foldLeft(key)((keyRepl,prefix)=>
       if(keyRepl.startsWith(prefix)) keyRepl.substring(prefix.length) else keyRepl)
-
-  def startsWithNamed(args: List[String]):Boolean =
-    args match {
-      case head :: _ => isNamed(head)
-      case _ => false
-    }
 }
 
 case class Argument(key:Either[String,Int],value:String)

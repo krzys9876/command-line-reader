@@ -6,11 +6,15 @@ scalaVersion := "2.13.8"
 
 idePackagePrefix := Some("org.kr.args")
 
+val coreDependencies = Seq(
+  "org.scala-lang" % "scala-reflect" % scalaVersion.toString()
+)
+
 val testDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.2.12" % Test
 )
 
-libraryDependencies ++= testDependencies
+libraryDependencies ++= coreDependencies ++ testDependencies
 
 //https://www.scalatest.org/user_guide/using_the_runner
 // redirect  test results to a file

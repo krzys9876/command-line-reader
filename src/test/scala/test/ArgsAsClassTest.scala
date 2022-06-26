@@ -4,6 +4,7 @@ package test
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 
+import java.lang.reflect.Field
 import java.time.{LocalDate, LocalDateTime}
 import scala.language.implicitConversions
 
@@ -13,38 +14,51 @@ class ArgsAsClassTest extends AnyFeatureSpec with GivenWhenThen {
       Given("named arguments are provided")
       val args=Array("--testarg1","123","--testarg2","T")
       When("arguments are parsed")
-      val argsClass=new Test01ArgsClass(args)
+      val argsClass=Test01ArgsClass.parse(args)
       Then("values from args are assigned to fields")
 
       val arg1:Int=argsClass.testarg1
       assert(arg1==123)
       val arg2:Boolean=argsClass.testarg2
       assert(arg2)
+      val arg3:String=argsClass.testarg3
+      assert(arg3=="AAA")
     }
   }
 }
 
 class Test01ArgsClass(args:Array[String]) extends ArgsProcessor(args) {
-  setParams()
+  val testarg1:ArgumentT[Int]=ArgumentT.optional(0)
+  val testarg2:ArgumentT[Boolean]=ArgumentT.required
+  val testarg3:ArgumentT[String]=ArgumentT.static("AAA")
 
-  private def setParams(): Unit = {
-    // TODO: to be replaced using reflection
-    testarg1.setName("testarg1")
-    testarg2.setName("testarg2")
-    testarg1.setMap(asMap)
-    testarg2.setMap(asMap)
+  private def setParams(): Test01ArgsClass = {
+    fillArgs()
+    this
   }
 
+  protected def getListOfFields: List[Field] = {
+    val valList = this.getClass.getDeclaredFields
+      .filterNot(this.getClass.getMethods.toSet)
+      .filter(f => f.getType.equals(classOf[ArgumentT[_]]))
+      .toList
+    valList.foreach(_.setAccessible(true))
+    valList
+  }
 
-  lazy val testarg1:ArgumentT[Int]=ArgumentT.optional(0)
-  lazy val testarg2:ArgumentT[Boolean]=ArgumentT.optional(false)
-
-
+  protected def fillArgs(): Unit =
+    getListOfFields.foreach(field=>{
+      val argField=field.get(this).asInstanceOf[ArgumentT[_]]
+      argField.setName(field.getName)
+      argField.setMap(asMap)
+    })
 }
 
 object Test01ArgsClass {
+  def parse(args:Array[String]):Test01ArgsClass = {
+    new Test01ArgsClass(args).setParams()
+  }
 }
-
 
 class ArgumentT[T](val defaultValue:Option[T],val isRequired:Boolean) {
   private[this] var privName:Option[String]=None

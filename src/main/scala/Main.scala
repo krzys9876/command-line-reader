@@ -47,7 +47,7 @@ object Main extends App {
   println(e.get)
   println(f.get)
 
-  val aT:ArgumentT[Int]=ArgumentT(argsProcessor("a").get,0)
+  /*val aT:ArgumentT[Int]=ArgumentT(argsProcessor("a").get,0)
   val bT:ArgumentT[String]=ArgumentT(argsProcessor("b").get,"")
   val cT:ArgumentT[String]=ArgumentT(argsProcessor("c").get,"")
   val dT:ArgumentT[Boolean]=ArgumentT(argsProcessor("d").get,false)
@@ -73,7 +73,7 @@ object Main extends App {
   println(cTv)
   println(dTv)
   println(eTv)
-  println(fTv)
+  println(fTv)*/
 
 }
 

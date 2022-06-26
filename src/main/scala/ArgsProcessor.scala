@@ -102,24 +102,3 @@ object Argument {
   implicit def argToLocalDateTime(arg:Option[Argument]):Option[LocalDateTime]=arg.flatMap(_.asLocalDateTime)
 }
 
-class ArgumentT[T](override val key:Either[String,Int], override val value:String, val defaultValue:T)
-  extends Argument(key,value) {
-  override def toString: String = {
-    val part1=key match {
-      case Left(name) => f"key: $name"
-      case Right(pos) => f"pos: $pos"
-    }
-    val part2=Argument(key,value).asInstanceOf[T]
-    part1+" value: "+part2
-  }
-}
-
-object ArgumentT {
-  def apply[T](arg:Argument,defaultValue:T):ArgumentT[T]=new ArgumentT(arg.key,arg.value,defaultValue)
-
-  implicit def argToString(arg:ArgumentT[String]):String=arg.asString.getOrElse(arg.defaultValue)
-  implicit def argToInt(arg:ArgumentT[Int]):Int=arg.asInt.getOrElse(arg.defaultValue)
-  implicit def argToBoolean(arg:ArgumentT[Boolean]):Boolean=arg.asBoolean.getOrElse(arg.defaultValue)
-  implicit def argToLocalDate(arg:ArgumentT[LocalDate]):LocalDate=arg.asLocalDate.getOrElse(arg.defaultValue)
-  implicit def argToLocalDateTime(arg:ArgumentT[LocalDateTime]):LocalDateTime=arg.asLocalDateTime.getOrElse(arg.defaultValue)
-}

@@ -1,4 +1,6 @@
-package org.kr
+package org.kr.args
+
+import ArgsProcessor.{isNamed, preProcess, splitNamed}
 
 import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
@@ -6,16 +8,28 @@ import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.util.Try
 
-case class ArgsProcessor(named:List[Argument],positional: List[String]) {
-  lazy val asMap:Map[Either[String,Int],Argument]=args.map(arg=> arg.key->arg).toMap
-  lazy val args:List[Argument]=
+class ArgsProcessor(val args:Array[String]) {
+
+  lazy val named:List[Argument]=doParse(args)._1
+  lazy val positional: List[String]=doParse(args)._2
+  lazy val arguments:List[Argument]=
     named ++
       positional.foldLeft((List[Argument](),0))(
         {case((list,counter),value)=>(list :+ Argument(counter+1,value),counter+1)})
         ._1
 
+  lazy val asMap:Map[Either[String,Int],Argument]=arguments.map(arg=> arg.key->arg).toMap
+
   def apply(name:String):Option[Argument]=asMap.get(Left(name))
   def apply(position:Int):Option[Argument]=asMap.get(Right(position))
+
+  private def doParse(args:Array[String]):(List[Argument],List[String])={
+    val argsPreprocessed=preProcess(args.toList)
+    val namedElements=argsPreprocessed.takeWhile(isNamed)
+    val remainingElements=argsPreprocessed.takeRight(argsPreprocessed.length-namedElements.length)
+    val named=namedElements.map(value=>splitNamed(value))
+    (named,remainingElements)
+  }
 }
 
 object ArgsProcessor {
@@ -23,11 +37,7 @@ object ArgsProcessor {
   val assignment="="
 
   def parse(args:Array[String]):ArgsProcessor = {
-    val argsPreprocessed=preProcess(args.toList)
-    val namedElements=argsPreprocessed.takeWhile(isNamed)
-    val remainingElements=argsPreprocessed.takeRight(argsPreprocessed.length-namedElements.length)
-    val named=namedElements.map(value=>splitNamed(value))
-    new ArgsProcessor(named,remainingElements)
+    new ArgsProcessor(args)
   }
 
   @tailrec

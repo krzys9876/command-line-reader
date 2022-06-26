@@ -4,7 +4,7 @@ version := "0.1"
 
 scalaVersion := "2.13.8"
 
-idePackagePrefix := Some("org.kr")
+idePackagePrefix := Some("org.kr.args")
 
 val testDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.2.12" % Test

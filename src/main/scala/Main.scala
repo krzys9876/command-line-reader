@@ -1,4 +1,4 @@
-package org.kr
+package org.kr.args
 
 import java.time.{LocalDate, LocalDateTime}
 
@@ -21,7 +21,7 @@ object Main extends App {
   println(argsProcessor.asMap(Left("e")).asLocalDate)
   println(argsProcessor.asMap(Left("f")).asLocalDateTime)
 
-  println(argsProcessor.args.mkString("|"))
+  println(argsProcessor.arguments.mkString("|"))
 
   println(argsProcessor("a"))
   println(argsProcessor("b"))

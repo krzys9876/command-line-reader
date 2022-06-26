@@ -1,9 +1,10 @@
-package org.kr
+package org.kr.args
+package test
 
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 
-class ArgsTest extends AnyFeatureSpec with GivenWhenThen {
+class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
   Feature("group args in logically related tuples") {
     Scenario("positional args only") {
       Given("only positional args")

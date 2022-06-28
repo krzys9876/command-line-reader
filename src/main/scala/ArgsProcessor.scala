@@ -15,7 +15,7 @@ class ArgsProcessor(val args:Array[String]) {
   lazy val arguments:List[Argument]=
     named ++
       positional.foldLeft((List[Argument](),0))(
-        {case((list,counter),value)=>(list :+ Argument(counter+1,value),counter+1)})
+        {case((list,counter),value)=>(list :+ Argument(counter,value),counter+1)})
         ._1
 
   lazy val asMap:Map[Either[String,Int],Argument]=arguments.map(arg=> arg.key->arg).toMap

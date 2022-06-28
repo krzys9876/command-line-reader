@@ -3,18 +3,10 @@ package org.kr.args
 import java.lang.reflect.Field
 import java.time.{LocalDate, LocalDateTime}
 import scala.language.implicitConversions
+import scala.reflect.runtime.universe._
 
 class ArgsAsClass(args:Array[String]) extends ArgsProcessor(args) {
-  val testarg1:ArgumentT[Int]=ArgumentT.optional(0)
-  val testarg2:ArgumentT[Boolean]=ArgumentT.required
-  val testarg3:ArgumentT[String]=ArgumentT.static("AAA")
-
-  private def setParams(): ArgsAsClass = {
-    fillArgs()
-    this
-  }
-
-  protected def getListOfFields: List[Field] = {
+  private def getListOfFields: List[Field] = {
     val valList = this.getClass.getDeclaredFields
       .filterNot(this.getClass.getMethods.toSet)
       .filter(f => f.getType.equals(classOf[ArgumentT[_]]))
@@ -23,59 +15,95 @@ class ArgsAsClass(args:Array[String]) extends ArgsProcessor(args) {
     valList
   }
 
-  protected def fillArgs(): Unit =
+  private def fillArgs(): Unit =
     getListOfFields.foreach(field=>{
       val argField=field.get(this).asInstanceOf[ArgumentT[_]]
-      argField.setName(field.getName)
-      argField.setMap(asMap)
+      argField.argumentType match {
+        case NAMED=>
+          argField.setName(field.getName)
+          argField.setArg(this(field.getName))
+        case POSITIONAL=>
+          argField.setArg(this(argField.pos))
+      }
     })
-}
 
-object ArgsAsClass {
-  def parse(args:Array[String]):ArgsAsClass = {
-    new ArgsAsClass(args).setParams()
+  def parse(): ArgsAsClass = {
+    fillArgs()
+    this
   }
 }
 
-class ArgumentT[T](val defaultValue:Option[T],val isRequired:Boolean) {
-  private[this] var privName:Option[String]=None
-  private[this] var pos:Option[Int]=None
-  private[this] var valueMap:Option[Map[Either[String,Int],Argument]]=None
-
-  lazy val name:String=privName.getOrElse("")
-
-  def setName(newName:String):Unit =
-    privName = if(privName.isEmpty) Some(newName) else privName
-
-  def setPos(newPos:Int):Unit =
-    pos = if(pos.isEmpty) Some(newPos) else pos
-
-  def setMap(newMap:Map[Either[String,Int],Argument]):Unit =
-    valueMap = if(valueMap.isEmpty) Some(newMap) else valueMap
-
-  def arg:Option[Argument]=
-    privName.flatMap(nm=>valueMap.flatMap(map=>map.get(Left(nm))))
+sealed trait ArgumentType {
+  val name:String
 }
 
+object NAMED extends ArgumentType {override val name:String="NAMED"}
+object POSITIONAL extends ArgumentType {override val name:String="NAMED"}
+
+class ArgumentT[T:TypeTag](val defaultValue:Option[T],val isRequired:Boolean,val argumentType:ArgumentType) {
+  private[this] var privKey: Option[Either[String, Int]] = None
+  private[this] var privArg: Option[Argument] = None
+
+  def setName(name: String): ArgumentT[T] = {
+    privKey = privKey.orElse(Some(Left(name)))
+    this
+  }
+
+  def setPos(pos: Int): ArgumentT[T] = {
+    privKey = privKey.orElse(Some(Right(pos)))
+    this
+  }
+
+  def setArg(newArg: Option[Argument]): Unit = privArg = privArg.orElse(newArg)
+
+  lazy val name: String = privKey.flatMap(_.left.toOption).getOrElse("")
+  lazy val pos: Int = privKey.flatMap(_.swap.left.toOption).getOrElse(0)
+  protected lazy val arg: Option[Argument] = privArg
+
+  lazy val value:T= {
+    val result=typeOf[T] match {
+      case t if t=:= typeOf[Int] => ArgumentT.asInt(this.asInstanceOf[ArgumentT[Int]])
+      case t if t=:= typeOf[String] => ArgumentT.asString(this.asInstanceOf[ArgumentT[String]])
+      case t if t=:= typeOf[Boolean] => ArgumentT.asBoolean(this.asInstanceOf[ArgumentT[Boolean]])
+      case t if t=:= typeOf[LocalDate] => ArgumentT.asLocalDate(this.asInstanceOf[ArgumentT[LocalDate]])
+      case t if t=:= typeOf[LocalDateTime] => ArgumentT.asLocalDateTime(this.asInstanceOf[ArgumentT[LocalDateTime]])
+    }
+    result.asInstanceOf[T]
+  }
+
+  def apply():T=value
+
+  override def toString: String = f"$name = $value"
+ }
+
 object ArgumentT {
-  def optional[T](defaultValue: T):ArgumentT[T]=new ArgumentT(Some(defaultValue),false)
-  def required[T]:ArgumentT[T]=new ArgumentT(None,true)
-  def static[T](value: T):ArgumentT[T]=new ArgumentT(Some(value),false)
-  def ignored[T]:ArgumentT[T]=new ArgumentT(None,false)
+  def optional[U:TypeTag](defaultValue: U):ArgumentT[U]=new ArgumentT(Some(defaultValue),false,NAMED)
+  def required[U:TypeTag]:ArgumentT[U]=new ArgumentT(None,true,NAMED)
+  def static[U:TypeTag](value: U):ArgumentT[U]=new ArgumentT(Some(value),false,NAMED)
+  def ignored[U:TypeTag]:ArgumentT[U]=new ArgumentT(None,false,NAMED)
 
-  implicit def argToString(arg:ArgumentT[String]):String= argToType(arg,_.asString)
-  implicit def argToInt(arg:ArgumentT[Int]):Int=argToType(arg,_.asInt)
-  implicit def argToBoolean(arg:ArgumentT[Boolean]):Boolean=argToType(arg,_.asBoolean)
-  implicit def argToLocalDate(arg:ArgumentT[LocalDate]):LocalDate=argToType(arg,_.asLocalDate)
-  implicit def argToLocalDateTime(arg:ArgumentT[LocalDateTime]):LocalDateTime=argToType(arg,_.asLocalDateTime)
+  def optionalPos[U:TypeTag](pos:Int,defaultValue: U):ArgumentT[U]=new ArgumentT(Some(defaultValue),false,POSITIONAL).setPos(pos)
+  def requiredPos[U:TypeTag](pos:Int):ArgumentT[U]=new ArgumentT(None,true,POSITIONAL).setPos(pos)
+  def staticPos[U:TypeTag](pos:Int,value: U):ArgumentT[U]=new ArgumentT(Some(value),false,POSITIONAL).setPos(pos)
+  def ignoredPos[U:TypeTag](pos:Int):ArgumentT[U]=new ArgumentT(None,false,POSITIONAL).setPos(pos)
 
-  private def argToType[T](arg:ArgumentT[T],asType:Argument=>Option[T]):T= {
-    val v:Option[T]=arg.arg.flatMap(asType)
-    (arg.isRequired,v.isEmpty,arg.defaultValue.isEmpty) match {
-      case (true,true,_) => throw new IllegalArgumentException(f"Argument: '${arg.name}' not found")
-      case (_,true,true) => throw new IllegalArgumentException(f"Argument: '${arg.name}' not found and is missing default value")
-      case (_,false,_) => v.get
-      case (_,true,false) => v.getOrElse(arg.defaultValue.get)
+  implicit def asString(arg:ArgumentT[String]):String= argToType(arg,_.asString)
+  implicit def asInt(arg:ArgumentT[Int]):Int=argToType(arg,_.asInt)
+  implicit def asBoolean(arg:ArgumentT[Boolean]):Boolean=argToType(arg,_.asBoolean)
+  implicit def asLocalDate(arg:ArgumentT[LocalDate]):LocalDate=argToType(arg,_.asLocalDate)
+  implicit def asLocalDateTime(arg:ArgumentT[LocalDateTime]):LocalDateTime=argToType(arg,_.asLocalDateTime)
+
+  private def argToType[U:TypeTag](arg:ArgumentT[U],asType:Argument=>Option[U]):U= {
+    val v:Option[U]=arg.arg.flatMap(asType)
+    (arg.arg.isEmpty,arg.isRequired,v.isEmpty,arg.defaultValue.isEmpty) match {
+      case (true,true,_,_) => throw new ValueConversionForArgumentException(f"Missing argument: '${arg.name}'")
+      case (false,true,true,_) => throw new MissingArgumentException(f"Incorrect value conversion for: '${arg.name}'")
+      case (_,_,true,true) => throw new MissingArgumentException(f"Missing argument: '${arg.name}' without default value")
+      case (_,_,false,_) => v.get
+      case (_,_,true,false) => v.getOrElse(arg.defaultValue.get)
     }
   }
 }
+
+class MissingArgumentException(message : String) extends Exception(message) {}
+class ValueConversionForArgumentException(message : String) extends Exception(message) {}

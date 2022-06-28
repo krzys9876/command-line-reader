@@ -5,7 +5,7 @@ import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 
 class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
-  Feature("group args in logically related tuples") {
+  Feature("group args in logically related key-vaue pairs") {
     Scenario("positional args only") {
       Given("only positional args")
       val args = Array("aaa", "bbb", "ccc")
@@ -95,6 +95,30 @@ class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
       Then("arguments with empty value are correctly passed")
       assert(processed.named.toSet == Set(Argument("aaa",""),Argument("bbb","2"),Argument("ccc","")))
       assert(processed.positional.isEmpty)
+    }
+  }
+  Feature("access named and positional args in a unified way") {
+    Scenario("access named args as option of value") {
+      Given("named and positional args are provided")
+      val args = Array("--aaa=5","--bbb=ABC","123","456")
+      When("args are processed")
+      val processed = ArgsProcessor.parse(args)
+      Then("named args can be accessed directly, not via list")
+      val aaa:Option[Int]=processed("aaa")
+      assert(aaa.contains(5))
+      val bbb:Option[String]=processed("bbb")
+      assert(bbb.contains("ABC"))
+    }
+    Scenario("access positional args as option of value") {
+      Given("named and positional args are provided")
+      val args = Array("--aaa=5","--bbb=ABC","123","XYZ")
+      When("args are processed")
+      val processed = ArgsProcessor.parse(args)
+      Then("positional args can be accessed directly, not via list")
+      val aaa:Option[Int]=processed(0)
+      assert(aaa.contains(123))
+      val bbb:Option[String]=processed(1)
+      assert(bbb.contains("XYZ"))
     }
   }
 }

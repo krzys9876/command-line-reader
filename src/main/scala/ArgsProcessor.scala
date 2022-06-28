@@ -1,6 +1,6 @@
 package org.kr.args
 
-import ArgsProcessor.{isNamed, preProcess, splitNamed}
+import ArgsProcessor.{formatKey, isNamed, preProcess, splitNamed}
 
 import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
@@ -11,8 +11,8 @@ import scala.reflect.runtime.universe._
 
 class ArgsProcessor(val args:Array[String]) {
 
-  lazy val named:List[Argument]=doParse(args)._1
-  lazy val positional: List[String]=doParse(args)._2
+  lazy val named:List[Argument]=parse(args)._1
+  lazy val positional: List[String]=parse(args)._2
   lazy val arguments:List[Argument]=
     named ++
       positional.foldLeft((List[Argument](),0))(
@@ -21,10 +21,10 @@ class ArgsProcessor(val args:Array[String]) {
 
   lazy val asMap:Map[Either[String,Int],Argument]=arguments.map(arg=> arg.key->arg).toMap
 
-  def apply(name:String):Option[Argument]=asMap.get(Left(name))
+  def apply(name:String):Option[Argument]=asMap.get(Left(formatKey(name)))
   def apply(position:Int):Option[Argument]=asMap.get(Right(position))
 
-  private def doParse(args:Array[String]):(List[Argument],List[String])={
+  private def parse(args:Array[String]):(List[Argument],List[String])={
     val argsPreprocessed=preProcess(args.toList)
     val namedElements=argsPreprocessed.takeWhile(isNamed)
     val remainingElements=argsPreprocessed.takeRight(argsPreprocessed.length-namedElements.length)
@@ -35,11 +35,8 @@ class ArgsProcessor(val args:Array[String]) {
 
 object ArgsProcessor {
   val keyPrefixes=List("--","-")
+  val separators=List(".","-","_")
   val assignment="="
-
-  def parse(args:Array[String]):ArgsProcessor = {
-    new ArgsProcessor(args)
-  }
 
   @tailrec
   private def preProcess(toProcess:List[String], processed:List[String]=List()) : List[String]={
@@ -62,14 +59,18 @@ object ArgsProcessor {
   private def splitNamed(namedText: String):Argument = {
     val splitPos=namedText.indexOf(assignment)
     val key=namedText.substring(0,splitPos)
-    val keyReplaced=removePrefix(key)
+    val keyReplaced=formatKey(key)
     val value=namedText.substring(splitPos+1)
     Argument(keyReplaced,value)
   }
 
-  private def removePrefix(key:String):String=
-    keyPrefixes.foldLeft(key)((keyRepl,prefix)=>
+  private def formatKey(key:String):String= {
+    val removedPrefix=keyPrefixes.foldLeft(key)((keyRepl,prefix)=>
       if(keyRepl.startsWith(prefix)) keyRepl.substring(prefix.length) else keyRepl)
+    val removedSeparators=separators.foldLeft(removedPrefix)((keyRepl,separator)=>
+      keyRepl.replace(separator,""))
+    removedSeparators.toUpperCase
+  }
 }
 
 case class Argument(key:Either[String,Int],value:String) {

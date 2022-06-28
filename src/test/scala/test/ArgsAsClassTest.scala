@@ -8,17 +8,18 @@ import java.time.LocalDate
 
 class ArgsAsClassTest extends AnyFeatureSpec with GivenWhenThen {
   Feature("arguments represented as class fields") {
-    Scenario("access named arg values using corresponding fields") {
+    Scenario("access named arg values using corresponding fields ") {
       Given("named arguments are provided")
       val args=Array("--testarg1","123","--testarg2","T","uvw","xyz")
       When("arguments are parsed")
       val argsClass=new ArgsTest01(args)
       Then("values from args are accessible through fields")
+      And("field names may contain upper and lower case letters and underscore")
       val arg1:Int=argsClass.testarg1
       assert(arg1==123)
-      val arg2:Boolean=argsClass.testarg2
+      val arg2:Boolean=argsClass.testArg2
       assert(arg2)
-      val arg3:String=argsClass.testarg3
+      val arg3:String=argsClass.test_arg_3
       assert(arg3=="AAA")
     }
     Scenario("access optional named arg values using corresponding fields") {
@@ -27,9 +28,10 @@ class ArgsAsClassTest extends AnyFeatureSpec with GivenWhenThen {
       When("arguments are parsed")
       val argsClass=new ArgsTest01(args)
       Then("default value is accessible through field")
-      val arg3:String=argsClass.testarg3
+      And("field names may contain upper and lower case letters and underscore")
+      val arg3:String=argsClass.test_arg_3
       assert(arg3=="AAA")
-      val arg4:String=argsClass.testarg4
+      val arg4:String=argsClass.TESTARG_4
       assert(arg4=="BBB")
     }
     Scenario("cannot access ignored named arg values using corresponding fields") {
@@ -79,9 +81,9 @@ class ArgsAsClassTest extends AnyFeatureSpec with GivenWhenThen {
 
 class ArgsTest01(args:Array[String]) extends ArgsAsClass(args) {
   val testarg1:ArgumentT[Int]=ArgumentT.optional(0)
-  val testarg2:ArgumentT[Boolean]=ArgumentT.required
-  val testarg3:ArgumentT[String]=ArgumentT.optional("AAA")
-  val testarg4:ArgumentT[String]=ArgumentT.static("BBB")
+  val testArg2:ArgumentT[Boolean]=ArgumentT.required
+  val test_arg_3:ArgumentT[String]=ArgumentT.optional("AAA")
+  val TESTARG_4:ArgumentT[String]=ArgumentT.static("BBB")
   val testarg5:ArgumentT[LocalDate]=ArgumentT.ignored
 
   val posarg0:ArgumentT[String]=ArgumentT.requiredPos(0)

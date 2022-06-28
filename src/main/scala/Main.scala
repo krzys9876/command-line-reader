@@ -12,17 +12,25 @@ object Main extends App {
 
   val a:Int=sampleArgs.a
   val a1:Int=sampleArgs.a.value+1
-  //sampleArgs.a.value
+
   println(a)
   println(a1)
   println(sampleArgs.a)
   println(sampleArgs.a())
   println(sampleArgs.a()+1)
+  println(sampleArgs.b)
   println(sampleArgs.b())
   println(sampleArgs.c)
   println(sampleArgs.d)
   println(sampleArgs.e)
   println(sampleArgs.f)
+
+  println(sampleArgs.pos0)
+  println(sampleArgs.pos0())
+  println(sampleArgs.pos1)
+  println(sampleArgs.pos1())
+  println(sampleArgs.pos2)
+  println(sampleArgs.pos2())
 }
 
 class SampleArgs(args:Array[String]) extends ArgsAsClass(args) {
@@ -32,6 +40,10 @@ class SampleArgs(args:Array[String]) extends ArgsAsClass(args) {
   val d:ArgumentT[Boolean]=ArgumentT.optional(false)
   val e:ArgumentT[LocalDate]=ArgumentT.required
   val f:ArgumentT[LocalDateTime]=ArgumentT.required
+
+  val pos0:ArgumentT[String]=ArgumentT.requiredPos(0)
+  val pos1:ArgumentT[String]=ArgumentT.requiredPos(1)
+  val pos2:ArgumentT[String]=ArgumentT.optionalPos(2,"none")
 
   parse()
 }

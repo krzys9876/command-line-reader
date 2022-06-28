@@ -101,4 +101,3 @@ object Argument {
   implicit def argToLocalDate(arg:Option[Argument]):Option[LocalDate]=arg.flatMap(_.asLocalDate)
   implicit def argToLocalDateTime(arg:Option[Argument]):Option[LocalDateTime]=arg.flatMap(_.asLocalDateTime)
 }
-

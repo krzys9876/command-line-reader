@@ -44,17 +44,23 @@ class ArgumentT[T:TypeTag](val defaultValue:Option[T],val isRequired:Boolean,val
   private[this] var privKey: Option[Either[String, Int]] = None
   private[this] var privArg: Option[Argument] = None
 
+  // set name only once
   def setName(name: String): ArgumentT[T] = {
     privKey = privKey.orElse(Some(Left(name)))
     this
   }
 
+  // set pos only once
   def setPos(pos: Int): ArgumentT[T] = {
     privKey = privKey.orElse(Some(Right(pos)))
     this
   }
 
-  def setArg(newArg: Option[Argument]): Unit = privArg = privArg.orElse(newArg)
+  //set arg only once
+  def setArg(newArg: Option[Argument]): ArgumentT[T] = {
+    privArg = privArg.orElse(newArg)
+    this
+  }
 
   lazy val name: String = privKey.flatMap(_.left.toOption).getOrElse("")
   lazy val pos: Int = privKey.flatMap(_.swap.left.toOption).getOrElse(0)
@@ -62,7 +68,7 @@ class ArgumentT[T:TypeTag](val defaultValue:Option[T],val isRequired:Boolean,val
 
   lazy val value:T= {
     val result=typeOf[T] match {
-      case t if t=:= typeOf[Int] => ArgumentT.asInt(this.asInstanceOf[ArgumentT[Int]])
+      case t if t=:= typeOf[Int] =>  ArgumentT.asInt(this.asInstanceOf[ArgumentT[Int]])
       case t if t=:= typeOf[String] => ArgumentT.asString(this.asInstanceOf[ArgumentT[String]])
       case t if t=:= typeOf[Boolean] => ArgumentT.asBoolean(this.asInstanceOf[ArgumentT[Boolean]])
       case t if t=:= typeOf[LocalDate] => ArgumentT.asLocalDate(this.asInstanceOf[ArgumentT[LocalDate]])
@@ -73,7 +79,7 @@ class ArgumentT[T:TypeTag](val defaultValue:Option[T],val isRequired:Boolean,val
 
   def apply():T=value
 
-  override def toString: String = f"$name = $value"
+  override def toString: String = f"${if(argumentType==NAMED) f"name:$name" else f"pos:$pos"}  = $value"
  }
 
 object ArgumentT {

@@ -25,5 +25,6 @@ Test / parallelExecution := false
 // from: https://githubhelp.com/sbt/sbt-assembly
 Compile / run := Defaults.runTask(Compile / fullClasspath, Compile / run / mainClass, Compile / run / runner).evaluated
 Compile / runMain := Defaults.runMainTask(Compile / fullClasspath, Compile / run / runner).evaluated
+
 ThisBuild / scalacOptions ++= Seq("-deprecation", "-feature")
 

@@ -15,6 +15,7 @@ object Main extends App {
   val a1:Int=sampleArgs.a.value+1
   // impicit access to option of value - None means missing arg or missing default value
   val a2:Option[Int]=sampleArgs.a
+  val a3:Int=sampleArgs.a.optValue.getOrElse(5)
 
   // let's print various combinations of argument values
   println(f"a:$a")
@@ -22,6 +23,7 @@ object Main extends App {
   println(f"a2:$a2")
   println(sampleArgs.a)
   println(sampleArgs.a())
+  println(sampleArgs.a.value)
   println(sampleArgs.a()+1)
   println(sampleArgs.b)
   println(sampleArgs.b())

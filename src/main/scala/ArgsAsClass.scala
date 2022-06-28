@@ -64,6 +64,7 @@ class ArgumentT[T:TypeTag](val defaultValue:Option[T],val isRequired:Boolean,val
   protected lazy val arg: Option[Argument] = privArg
 
   lazy val value:T= ArgumentT.asValueUnsafe[T](this)
+  lazy val optValue:Option[T]= ArgumentT.asOption[T](this)
   def apply():T=value
 
   override def toString: String = f"${if(argumentType==NAMED) f"name:$name" else f"pos:$pos"}  = $value"

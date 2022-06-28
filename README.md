@@ -27,3 +27,30 @@ You may define a class like this:
 
       parse()
     }
+
+Instantiate the class at the very top of your main class:
+
+    object Main extends App {
+      val arguments=new SampleArgs(args)
+      ...
+    }
+
+Now you can access values by:
+
+    // assignment to a typed val - scala will do implicit type conversion for you:
+    val inFile:String=arguments.inputFile
+
+    // assignment to a val using explicit type conversion:
+    val numOfIterations=arguments.iterations.value
+    // or using apply():
+    val numOfIterations=arguments.iterations()
+
+NOTE: the above may throw error if a required argument is missing!
+
+    // assignent to a optional val with implicit type conversion
+    val outFile:Option[String]=arguments.outputFile
+    // or explicitly
+    val outFile:String=arguments.outputFile.optValue.getOrElse("/tmp/any_folder/out.bin")
+    
+This is safe (i.e. no error will be thrown) but you have to deal with options yourself.
+

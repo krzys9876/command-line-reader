@@ -3,18 +3,23 @@ package org.kr.args
 import java.time.{LocalDate, LocalDateTime}
 
 object Main extends App {
-
   // input: --a=123 --b "DEF GHI" -c=JKL -d T -e 2022-01-02 -f="2022-01-02 23:45:56" MNO PQR
 
   val sampleArgs=new SampleArgs(args)
   println(sampleArgs.named.mkString("|"))
   println(sampleArgs.positional.mkString("|"))
 
+  // implicit conversion to typed val (it must be typed for compiler to infer destination type)
   val a:Int=sampleArgs.a
+  // explicit access to value
   val a1:Int=sampleArgs.a.value+1
+  // impicit access to option of value - None means missing arg or missing default value
+  val a2:Option[Int]=sampleArgs.a
 
-  println(a)
-  println(a1)
+  // let's print various combinations of argument values
+  println(f"a:$a")
+  println(f"a1:$a1")
+  println(f"a2:$a2")
   println(sampleArgs.a)
   println(sampleArgs.a())
   println(sampleArgs.a()+1)
@@ -47,4 +52,3 @@ class SampleArgs(args:Array[String]) extends ArgsAsClass(args) {
 
   parse()
 }
-

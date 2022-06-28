@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.util.Try
+import scala.reflect.runtime.universe._
 
 class ArgsProcessor(val args:Array[String]) {
 
@@ -95,9 +96,16 @@ object Argument {
   def apply(key:String,value:String):Argument = new Argument(Left(key),value)
   def apply(key:Int,value:String):Argument = new Argument(Right(key),value)
 
-  implicit def argToString(arg:Option[Argument]):Option[String]=arg.flatMap(_.asString)
-  implicit def argToInt(arg:Option[Argument]):Option[Int]=arg.flatMap(_.asInt)
-  implicit def argToBoolean(arg:Option[Argument]):Option[Boolean]=arg.flatMap(_.asBoolean)
-  implicit def argToLocalDate(arg:Option[Argument]):Option[LocalDate]=arg.flatMap(_.asLocalDate)
-  implicit def argToLocalDateTime(arg:Option[Argument]):Option[LocalDateTime]=arg.flatMap(_.asLocalDateTime)
+  // implicit conversion between optional argument and its optional value of a given type
+  implicit def argToType[U: TypeTag](arg:Option[Argument]):Option[U]= {
+    // explicit choice of method that converts string value of an argument to a given type
+    val result = typeOf[U] match {
+      case t if t =:= typeOf[Int] => arg.flatMap(_.asInt)
+      case t if t =:= typeOf[String] => arg.flatMap(_.asString)
+      case t if t =:= typeOf[Boolean] => arg.flatMap(_.asBoolean)
+      case t if t =:= typeOf[LocalDate] => arg.flatMap(_.asLocalDate)
+      case t if t =:= typeOf[LocalDateTime] => arg.flatMap(_.asLocalDateTime)
+    }
+    result.asInstanceOf[Option[U]]
+  }
 }

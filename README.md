@@ -22,7 +22,7 @@ You may define a class like this:
 
     class SampleArgs(args:Array[String]) extends ArgsAsClass(args) {
       val inputFile:ArgumentT[String]=ArgumentT.required
-      val argorithm:ArgumentT[String]=ArgumentT.required
+      val algorithm:ArgumentT[String]=ArgumentT.required
       val iterations:ArgumentT[Int]=ArgumentT.optional(5)
       val outputFile:ArgumentT[String]=ArgumentT.required
       val verbose:ArgumentT[Boolean]=ArgumentT.optional(false)

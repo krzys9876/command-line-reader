@@ -1,16 +1,16 @@
 # Scala command-line reader
 ## Convert arguments to fields within a simple class
 
-This short project is an excercise of scala impicit type conversions as well as a little bit of reflection.
+This short project is an exercise of scala implicit type conversions with a bit of reflection.
 
 If you're using your code in a way that the key configurations are passed as program arguments (this is what I do with my spark applications) 
 you've probably already came across libraries that hide all the complexity of this (not that simple) task.
 
 I usually try to understand the mechanics of the task before I decide if I should use an external library (who would write his/her own spark???) or write some code on my own.
-This is a result of a study of scala impicits (which I really like) and java reflection, which I already knew from other projects.
+This is a result of a study of scala implicits (which I find extremely useful) and java reflection, which I already knew from other projects.
 
 The idea is to allow a developer to create a simplest possible class which contains fields corresponding to every argument. These fields should be easily 
-definable (e.g. required/optional) and accessible (without too much boilerplate).
+definable (e.g. required/optional) and accessible (without too much boilerplate). Both scala files fit the 100 lines mark, which I guess qualifies them as _simple_.
 
 ### Example ###
 
@@ -21,11 +21,11 @@ Consider an example argument list:
 You may define a class like this:
 
     class SampleArgs(args:Array[String]) extends ArgsAsClass(args) {
-      val inputFile:ArgumentT[String]=ArgumentT.required
-      val algorithm:ArgumentT[String]=ArgumentT.required
-      val iterations:ArgumentT[Int]=ArgumentT.optional(5)
-      val outputFile:ArgumentT[String]=ArgumentT.required
-      val verbose:ArgumentT[Boolean]=ArgumentT.optional(false)
+      val inputFile:Argument[String]=Argument.required
+      val algorithm:Argument[String]=Argument.required
+      val iterations:Argument[Int]=Argument.optional(5)
+      val outputFile:Argument[String]=Argument.required
+      val verbose:Argument[Boolean]=Argument.optional(false)
 
       parse()
     }
@@ -77,11 +77,11 @@ but even more verbose.
 Say you define a trait with application-wide arguments:
 
     trait SampleArgsBase {
-      val inputFile:ArgumentT[String]
-      val algorithm:ArgumentT[String]
-      val iterations:ArgumentT[Int]
-      val outputFile:ArgumentT[String]
-      val verbose:ArgumentT[Boolean]
+      val inputFile:Argument[String]
+      val algorithm:Argument[String]
+      val iterations:Argument[Int]
+      val outputFile:Argument[String]
+      val verbose:Argument[Boolean]
     }
 
 Note: there's no _parse_ method.
@@ -102,11 +102,11 @@ Note: You have to use _parse()_ here.
 For testing, you may define a separate class in a different way:
 
     class SampleArgsTest extends SampleArgsBase {
-      val inputFile:ArgumentT[String]=ArgumentT.static("/test/files/in.bin")
-      val algorithm:ArgumentT[String]=ArgumentT.static("fast")
-      val iterations:ArgumentT[Int]=ArgumentT.static(2)
-      val outputFile:ArgumentT[String]=ArgumentT.static("/test/files/in.bin")
-      val verbose:ArgumentT[Boolean]=ArgumentT.ignored
+      val inputFile:Argument[String]=Argument.static("/test/files/in.bin")
+      val algorithm:Argument[String]=Argument.static("fast")
+      val iterations:Argument[Int]=Argument.static(2)
+      val outputFile:Argument[String]=Argument.static("/test/files/in.bin")
+      val verbose:Argument[Boolean]=Argument.ignored
     }
 
 This is just a different convention. You explicitly set configuration values
@@ -114,3 +114,34 @@ and more importantly by using _ignored_ you show that this parameter is not
 used during testing. Since there is nothing to be parsed, you don't need the _parse_ method.
 
 I find this more verbose.
+
+### Side note 3 on adding new types ###
+
+Depending on personal preferences you may find useful arguments of very specific types, e.g. Double from scientific notation. 
+To add new type all you have to do is:
+1. Define a new parsing method in RawArgument class, e.g. _asYourType_. It should convert the textual _value_ into option of the type you're adding. 
+2. Add YourType to pattern matching in RawArgument object's implicit method _argToType_. It should invoke _asYourType_ method (you need _flatMap_ here since you must map option to option). 
+
+This would look like:
+
+    case class RawArgument(key:Either[String,Int], value:String) {
+        ...
+      def asDouble:Option[Double]=
+        Try(Some(BigDecimal(value).toDouble)).getOrElse(None)
+    }
+
+    object RawArgument {
+      // implicit conversion between optional argument and its optional value of a given type
+      implicit def argToType[U: TypeTag](arg:Option[RawArgument]):Option[U]= {
+        ...
+        case t if t =:= typeOf[Double] => arg.flatMap(_.asDouble)
+        ...
+      }
+    }
+
+Now you can define an argument as double:
+
+    class SampleArgs2(args:Array[String]) extends ArgsAsClass(args) {
+      val doubleValue:Argument[Double]=Argument.required
+      parse()
+    }

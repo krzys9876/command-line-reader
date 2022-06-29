@@ -39,21 +39,30 @@ object Main extends App {
   println(sampleArgs.pos1())
   println(sampleArgs.pos2)
   println(sampleArgs.pos2())
+
+  val sampleArgs2=new SampleArgs2(Array("-double.value=1.234E-3"))
+  val d:Double=sampleArgs2.doubleValue
+  println(d)
 }
 
 class SampleArgs(args:Array[String]) extends ArgsAsClass(args) {
-  val a:ArgumentT[Int]=ArgumentT.required
-  val b:ArgumentT[String]=ArgumentT.required
-  val c:ArgumentT[String]=ArgumentT.required
-  val d:ArgumentT[Boolean]=ArgumentT.optional(false)
-  val e:ArgumentT[LocalDate]=ArgumentT.required
-  val f:ArgumentT[LocalDateTime]=ArgumentT.required
+  val a:Argument[Int]=Argument.required
+  val b:Argument[String]=Argument.required
+  val c:Argument[String]=Argument.required
+  val d:Argument[Boolean]=Argument.optional(false)
+  val e:Argument[LocalDate]=Argument.required
+  val f:Argument[LocalDateTime]=Argument.required
 
-  val pos0:ArgumentT[String]=ArgumentT.requiredPos(0)
-  val pos1:ArgumentT[String]=ArgumentT.requiredPos(1)
-  val pos2:ArgumentT[String]=ArgumentT.optionalPos(2,"none")
+  val pos0:Argument[String]=Argument.requiredPos(0)
+  val pos1:Argument[String]=Argument.requiredPos(1)
+  val pos2:Argument[String]=Argument.optionalPos(2,"none")
 
-  val g:ArgumentT[LocalDateTime]=ArgumentT.static(LocalDateTime.now())
+  val g:Argument[LocalDateTime]=Argument.static(LocalDateTime.now())
 
+  parse()
+}
+
+class SampleArgs2(args:Array[String]) extends ArgsAsClass(args) {
+  val doubleValue:Argument[Double]=Argument.required
   parse()
 }

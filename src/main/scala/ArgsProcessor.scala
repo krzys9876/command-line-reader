@@ -11,20 +11,20 @@ import scala.reflect.runtime.universe._
 
 class ArgsProcessor(val args:Array[String]) {
 
-  lazy val named:List[Argument]=parse(args)._1
+  lazy val named:List[RawArgument]=parse(args)._1
   lazy val positional: List[String]=parse(args)._2
-  lazy val arguments:List[Argument]=
+  lazy val arguments:List[RawArgument]=
     named ++
-      positional.foldLeft((List[Argument](),0))(
-        {case((list,counter),value)=>(list :+ Argument(counter,value),counter+1)})
+      positional.foldLeft((List[RawArgument](),0))(
+        {case((list,counter),value)=>(list :+ RawArgument(counter,value),counter+1)})
         ._1
 
-  lazy val asMap:Map[Either[String,Int],Argument]=arguments.map(arg=> arg.key->arg).toMap
+  lazy val asMap:Map[Either[String,Int],RawArgument]=arguments.map(arg=> arg.key->arg).toMap
 
-  def apply(name:String):Option[Argument]=asMap.get(Left(formatKey(name)))
-  def apply(position:Int):Option[Argument]=asMap.get(Right(position))
+  def apply(name:String):Option[RawArgument]=asMap.get(Left(formatKey(name)))
+  def apply(position:Int):Option[RawArgument]=asMap.get(Right(position))
 
-  private def parse(args:Array[String]):(List[Argument],List[String])={
+  private def parse(args:Array[String]):(List[RawArgument],List[String])={
     val argsPreprocessed=preProcess(args.toList)
     val namedElements=argsPreprocessed.takeWhile(isNamed)
     val remainingElements=argsPreprocessed.takeRight(argsPreprocessed.length-namedElements.length)
@@ -56,12 +56,12 @@ object ArgsProcessor {
       !value.startsWith(assignment) &&
       value.contains(assignment)
 
-  private def splitNamed(namedText: String):Argument = {
+  private def splitNamed(namedText: String):RawArgument = {
     val splitPos=namedText.indexOf(assignment)
     val key=namedText.substring(0,splitPos)
     val keyReplaced=formatKey(key)
     val value=namedText.substring(splitPos+1)
-    Argument(keyReplaced,value)
+    RawArgument(keyReplaced,value)
   }
 
   private def formatKey(key:String):String= {
@@ -73,7 +73,7 @@ object ArgsProcessor {
   }
 }
 
-case class Argument(key:Either[String,Int],value:String) {
+case class RawArgument(key:Either[String,Int], value:String) {
   def asString:Option[String]=Some(value)
 
   def asBoolean:Option[Boolean]=
@@ -91,14 +91,17 @@ case class Argument(key:Either[String,Int],value:String) {
 
   def asLocalDateTime:Option[LocalDateTime]=
     Try(Some(LocalDateTime.parse(value,DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))).getOrElse(None)
+
+  def asDouble:Option[Double]=
+    Try(Some(BigDecimal(value).toDouble)).getOrElse(None)
 }
 
-object Argument {
-  def apply(key:String,value:String):Argument = new Argument(Left(key),value)
-  def apply(key:Int,value:String):Argument = new Argument(Right(key),value)
+object RawArgument {
+  def apply(key:String,value:String):RawArgument = new RawArgument(Left(key),value)
+  def apply(key:Int,value:String):RawArgument = new RawArgument(Right(key),value)
 
   // implicit conversion between optional argument and its optional value of a given type
-  implicit def argToType[U: TypeTag](arg:Option[Argument]):Option[U]= {
+  implicit def argToType[U: TypeTag](arg:Option[RawArgument]):Option[U]= {
     // explicit choice of method that converts string value of an argument to a given type
     val result = typeOf[U] match {
       case t if t =:= typeOf[Int] => arg.flatMap(_.asInt)
@@ -106,6 +109,7 @@ object Argument {
       case t if t =:= typeOf[Boolean] => arg.flatMap(_.asBoolean)
       case t if t =:= typeOf[LocalDate] => arg.flatMap(_.asLocalDate)
       case t if t =:= typeOf[LocalDateTime] => arg.flatMap(_.asLocalDateTime)
+      case t if t =:= typeOf[Double] => arg.flatMap(_.asDouble)
     }
     result.asInstanceOf[Option[U]]
   }

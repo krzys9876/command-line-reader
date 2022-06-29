@@ -12,6 +12,8 @@ This is a result of a study of scala impicits (which I really like) and java ref
 The idea is to allow a developer to create a simplest possible class which contains fields corresponding to every argument. These fields should be easily 
 definable (e.g. required/optional) and accessible (without too much boilerplate).
 
+### Example ###
+
 Consider an example argument list:
 
     --input-file="/tmp/some_folder/input.bin" --algorithm=gz --iterations=10 --output-file="/tmp/some_other_folder/output.bin"
@@ -27,6 +29,9 @@ You may define a class like this:
 
       parse()
     }
+
+Invocation of the method _parse()_ is actually the only boilerplate (apart from type declaration).
+It fills all the required values just after instantiation of the class. See also below.
 
 Instantiate the class at the very top of your main class:
 
@@ -54,3 +59,11 @@ NOTE: the above may throw error if a required argument is missing!
     
 This is safe (i.e. no error will be thrown) but you have to deal with options yourself.
 
+### Side note on immutability ###
+
+You may have noticed that I use some private _vars_ to keep a name, position and actual argument.
+The problem is this: I need to set contents of a field on the basis of its actual name. In order
+to use reflection the field must be instantiated, i.e. I cannot set _vals_ afterwards. 
+
+Note that all this happens during, or rather just after, instantiation of the class. It means that
+there is no access to _vars_ at runtime since they are set only once. This makes them a bit like _lazy vals_.

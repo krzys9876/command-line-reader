@@ -4,6 +4,8 @@ package test
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 
+import java.time.{LocalDate, LocalDateTime}
+
 class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
   Feature("group args in logically related key-vaue pairs") {
     Scenario("positional args only") {
@@ -21,7 +23,7 @@ class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
       When("args are processed")
       val processed = new ArgsProcessor(args)
       Then("named arguments are parsed")
-      assert(processed.named.toSet == Set(Argument("AAA", "1"), Argument("BBB", "2"), Argument("CCC", "3")))
+      assert(processed.named.toSet == Set(RawArgument("AAA", "1"), RawArgument("BBB", "2"), RawArgument("CCC", "3")))
       assert(processed.positional.isEmpty)
     }
     Scenario("named args only separated with space") {
@@ -30,7 +32,7 @@ class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
       When("args are processed")
       val processed = new ArgsProcessor(args)
       Then("named arguments are parsed")
-      assert(processed.named.toSet == Set(Argument("AAA", "1"), Argument("BBB", "2"), Argument("CCC", "3")))
+      assert(processed.named.toSet == Set(RawArgument("AAA", "1"), RawArgument("BBB", "2"), RawArgument("CCC", "3")))
       assert(processed.positional.isEmpty)
     }
     Scenario("named args separated with space or '='") {
@@ -39,7 +41,7 @@ class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
       When("args are processed")
       val processed = new ArgsProcessor(args)
       Then("named arguments are parsed")
-      assert(processed.named.toSet == Set(Argument("AAA", "1"), Argument("BBB", "2"), Argument("CCC", "3"),Argument("DDD", "4")))
+      assert(processed.named.toSet == Set(RawArgument("AAA", "1"), RawArgument("BBB", "2"), RawArgument("CCC", "3"),RawArgument("DDD", "4")))
       assert(processed.positional.isEmpty)
     }
     Scenario("named args separated with space or '=' with positional args at the end") {
@@ -48,7 +50,7 @@ class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
       When("args are processed")
       val processed = new ArgsProcessor(args)
       Then("named arguments are parsed")
-      assert(processed.named.toSet == Set(Argument("AAA", "1"), Argument("BBB", "2"), Argument("CCC", "3"),Argument("DDD", "4")))
+      assert(processed.named.toSet == Set(RawArgument("AAA", "1"), RawArgument("BBB", "2"), RawArgument("CCC", "3"),RawArgument("DDD", "4")))
       assert(processed.positional==List("positional1","positional2"))
     }
     Scenario("named args' names are converted to uppercase without separators") {
@@ -57,7 +59,7 @@ class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
       When("args are processed")
       val processed = new ArgsProcessor(args)
       Then("named arguments' names are converted to uppercase witout separators'")
-      assert(processed.named.toSet == Set(Argument("AAA", "1"), Argument("BBB", "2"), Argument("CCC", "3"),Argument("DDD", "4")))
+      assert(processed.named.toSet == Set(RawArgument("AAA", "1"), RawArgument("BBB", "2"), RawArgument("CCC", "3"),RawArgument("DDD", "4")))
       assert(processed.positional==List("positional1","positional2"))
     }
     Scenario("named args and positional args with spaces in values") {
@@ -66,7 +68,7 @@ class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
       When("args are processed")
       val processed = new ArgsProcessor(args)
       Then("named arguments are parsed")
-      assert(processed.named.toSet == Set(Argument("AAA", "1 A"), Argument("BBB", "2 B"), Argument("CCC", "3 C"),Argument("DDD", "4 D")))
+      assert(processed.named.toSet == Set(RawArgument("AAA", "1 A"), RawArgument("BBB", "2 B"), RawArgument("CCC", "3 C"),RawArgument("DDD", "4 D")))
       assert(processed.positional==List("positional 1","positional 2"))
     }
     Scenario("named args after positional are treated as positional") {
@@ -84,7 +86,7 @@ class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
       When("args are processed")
       val processed = new ArgsProcessor(args)
       Then("only named args before doubled value are parsed as named, rest is positional")
-      assert(processed.named.toSet == Set(Argument("AAA","1"),Argument("BBB","2")))
+      assert(processed.named.toSet == Set(RawArgument("AAA","1"),RawArgument("BBB","2")))
       assert(processed.positional == List("3", "-ccc", "4"))
     }
     Scenario("named arg may have empty value") {
@@ -93,7 +95,7 @@ class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
       When("args are processed")
       val processed = new ArgsProcessor(args)
       Then("arguments with empty value are correctly passed")
-      assert(processed.named.toSet == Set(Argument("AAA",""),Argument("BBB","2"),Argument("CCC","")))
+      assert(processed.named.toSet == Set(RawArgument("AAA",""),RawArgument("BBB","2"),RawArgument("CCC","")))
       assert(processed.positional.isEmpty)
     }
   }
@@ -119,6 +121,53 @@ class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
       assert(aaa.contains(123))
       val bbb:Option[String]=processed(1).flatMap(_.asString)
       assert(bbb.contains("XYZ"))
+    }
+  }
+  Feature("parse different types of values") {
+    Scenario("parse Int") {
+      Given("named parameter is provided")
+      val args = Array("--aaa=5")
+      When("args are processed")
+      val processed = new ArgsProcessor(args)
+      Then("parameter is properly parsed")
+      val aaa: Option[Int] = processed("AAA").flatMap(_.asInt)
+      assert(aaa.contains(5))
+    }
+    Scenario("parse Boolean") {
+      Given("named parameter is provided")
+      val args = Array("--aaa=true","--bbb=false","--ccc=T","--ddd=F")
+      When("args are processed")
+      val processed = new ArgsProcessor(args)
+      Then("parameter is properly parsed")
+      assert(processed("AAA").flatMap(_.asBoolean).contains(true))
+      assert(processed("BBB").flatMap(_.asBoolean).contains(false))
+      assert(processed("CCC").flatMap(_.asBoolean).contains(true))
+      assert(processed("DDD").flatMap(_.asBoolean).contains(false))
+    }
+    Scenario("parse LocalDate") {
+      Given("named parameter is provided")
+      val args = Array("--aaa=2022-01-02")
+      When("args are processed")
+      val processed = new ArgsProcessor(args)
+      Then("parameter is properly parsed")
+      assert(processed("AAA").flatMap(_.asLocalDate).contains(LocalDate.of(2022,1,2)))
+    }
+    Scenario("parse LocalDateTime") {
+      Given("named parameter is provided")
+      val args = Array("--aaa=2022-01-02 12:34:56")
+      When("args are processed")
+      val processed = new ArgsProcessor(args)
+      Then("parameter is properly parsed")
+      assert(processed("AAA").flatMap(_.asLocalDateTime).contains(LocalDateTime.of(2022,1,2,12,34,56)))
+    }
+    Scenario("parse Double") {
+      Given("named parameter is provided")
+      val args = Array("--aaa=1.234E-2","--bbb=7.6543")
+      When("args are processed")
+      val processed = new ArgsProcessor(args)
+      Then("parameter is properly parsed")
+      assert(processed("AAA").flatMap(_.asDouble).contains(0.01234))
+      assert(processed("BBB").flatMap(_.asDouble).contains(7.6543))
     }
   }
 }

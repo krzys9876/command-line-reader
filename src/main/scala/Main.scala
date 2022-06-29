@@ -31,6 +31,7 @@ object Main extends App {
   println(sampleArgs.d)
   println(sampleArgs.e)
   println(sampleArgs.f)
+  println(sampleArgs.g)
 
   println(sampleArgs.pos0)
   println(sampleArgs.pos0())
@@ -51,6 +52,8 @@ class SampleArgs(args:Array[String]) extends ArgsAsClass(args) {
   val pos0:ArgumentT[String]=ArgumentT.requiredPos(0)
   val pos1:ArgumentT[String]=ArgumentT.requiredPos(1)
   val pos2:ArgumentT[String]=ArgumentT.optionalPos(2,"none")
+
+  val g:ArgumentT[LocalDateTime]=ArgumentT.static(LocalDateTime.now())
 
   parse()
 }

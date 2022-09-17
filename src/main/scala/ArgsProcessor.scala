@@ -7,10 +7,8 @@ import java.time.format.DateTimeFormatter
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.util.Try
-import scala.reflect.runtime.universe._
 
 class ArgsProcessor(val args:Array[String]) {
-
   lazy val named:List[RawArgument]=parse(args)._1
   lazy val positional: List[String]=parse(args)._2
   lazy val arguments:List[RawArgument]=
@@ -75,42 +73,46 @@ object ArgsProcessor {
 
 case class RawArgument(key:Either[String,Int], value:String) {
   def asString:Option[String]=Some(value)
-
   def asBoolean:Option[Boolean]=
     value.toUpperCase() match {
       case "T" | "TRUE" => Some(true)
       case "F" | "FALSE" => Some(false)
       case _ => None
     }
-
-  def asInt:Option[Int]=
-    Try(Some(value.toInt)).getOrElse(None)
-
+  def asInt:Option[Int]=value.toIntOption
   def asLocalDate:Option[LocalDate]=
     Try(Some(LocalDate.parse(value,DateTimeFormatter.ofPattern("yyyy-MM-dd")))).getOrElse(None)
-
   def asLocalDateTime:Option[LocalDateTime]=
     Try(Some(LocalDateTime.parse(value,DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))).getOrElse(None)
-
-  def asDouble:Option[Double]=
-    Try(Some(BigDecimal(value).toDouble)).getOrElse(None)
+  def asDouble:Option[Double]=value.toDoubleOption
 }
 
 object RawArgument {
   def apply(key:String,value:String):RawArgument = new RawArgument(Left(key),value)
   def apply(key:Int,value:String):RawArgument = new RawArgument(Right(key),value)
+}
 
-  // implicit conversion between optional argument and its optional value of a given type
-  implicit def argToType[U: TypeTag](arg:Option[RawArgument]):Option[U]= {
-    // explicit choice of method that converts string value of an argument to a given type
-    val result = typeOf[U] match {
-      case t if t =:= typeOf[Int] => arg.flatMap(_.asInt)
-      case t if t =:= typeOf[String] => arg.flatMap(_.asString)
-      case t if t =:= typeOf[Boolean] => arg.flatMap(_.asBoolean)
-      case t if t =:= typeOf[LocalDate] => arg.flatMap(_.asLocalDate)
-      case t if t =:= typeOf[LocalDateTime] => arg.flatMap(_.asLocalDateTime)
-      case t if t =:= typeOf[Double] => arg.flatMap(_.asDouble)
-    }
-    result.asInstanceOf[Option[U]]
+trait RawArgumentConverter[T] {
+def toValue(rawArgument:Option[RawArgument]):Option[T]
+}
+
+object RawArgumentConverter {
+  implicit object RawArgumentToInt extends RawArgumentConverter[Int] {
+    override def toValue(rawArgument: Option[RawArgument]): Option[Int] = rawArgument.flatMap(_.asInt)
+  }
+  implicit object RawArgumentToString extends RawArgumentConverter[String] {
+    override def toValue(rawArgument: Option[RawArgument]): Option[String] = rawArgument.flatMap(_.asString)
+  }
+  implicit object RawArgumentToBoolean extends RawArgumentConverter[Boolean] {
+    override def toValue(rawArgument: Option[RawArgument]): Option[Boolean] = rawArgument.flatMap(_.asBoolean)
+  }
+  implicit object RawArgumentToLocalDate extends RawArgumentConverter[LocalDate] {
+    override def toValue(rawArgument: Option[RawArgument]): Option[LocalDate] = rawArgument.flatMap(_.asLocalDate)
+  }
+  implicit object RawArgumentToLocalDateTime extends RawArgumentConverter[LocalDateTime] {
+    override def toValue(rawArgument: Option[RawArgument]): Option[LocalDateTime] = rawArgument.flatMap(_.asLocalDateTime)
+  }
+  implicit object RawArgumentToDouble extends RawArgumentConverter[Double] {
+    override def toValue(rawArgument: Option[RawArgument]): Option[Double] = rawArgument.flatMap(_.asDouble)
   }
 }

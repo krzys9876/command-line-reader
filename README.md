@@ -127,17 +127,19 @@ This would look like:
     case class RawArgument(key:Either[String,Int], value:String) {
         ...
       def asDouble:Option[Double]=
-        Try(Some(BigDecimal(value).toDouble)).getOrElse(None)
+        Double.toDoubleOption
     }
 
-    object RawArgument {
-      // implicit conversion between optional argument and its optional value of a given type
-      implicit def argToType[U: TypeTag](arg:Option[RawArgument]):Option[U]= {
+    object RawArgumentConverter {
         ...
-        case t if t =:= typeOf[Double] => arg.flatMap(_.asDouble)
-        ...
+      implicit object RawArgumentToDouble extends RawArgumentConverter[Double] {
+        override def toValue(rawArgument: Option[RawArgument]): Option[Double] = rawArgument.flatMap(_.asDouble)
       }
     }
+
+Ypu could argue that value conversion and exposing implicit object could 
+be combined RawArgumentConverter. Still I prefer to separate these two reponsibilities, even 
+if it generates some more boilerplate.
 
 Now you can define an argument as double:
 

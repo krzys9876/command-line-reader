@@ -119,8 +119,8 @@ I find this more verbose.
 
 Depending on personal preferences you may find useful arguments of very specific types, e.g. Double from scientific notation. 
 To add new type all you have to do is:
-1. Define a new parsing method in RawArgument class, e.g. _asYourType_. It should convert the textual _value_ into option of the type you're adding. 
-2. Add YourType to pattern matching in RawArgument object's implicit method _argToType_. It should invoke _asYourType_ method (you need _flatMap_ here since you must map option to option). 
+1. Define a new parsing method in _RawArgument_ class, e.g. _asYourType_. It should convert the textual _value_ into option of the type you're adding. 
+2. Add another implicit object to _RawArgumentConverter_, which overrides _toValue_ method. It should invoke _asYourType_ method (you need _flatMap_ here since you must map option to option). 
 
 This would look like:
 

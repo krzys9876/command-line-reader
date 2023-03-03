@@ -1,30 +1,36 @@
 name := "args"
+ThisBuild / version := "1.0.0"
+ThisBuild / versionScheme := Some("early-semver")
 
-version := "0.1"
+scalaVersion := "2.13.10"
 
-scalaVersion := "2.13.8"
-
-idePackagePrefix := Some("org.kr.args")
-
-val coreDependencies = Seq(
-  "org.scala-lang" % "scala-reflect" % scalaVersion.toString()
+libraryDependencies ++= Seq(
+  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+  "org.scalatest" %% "scalatest" % "3.2.15" % Test
 )
 
-val testDependencies = Seq(
-  "org.scalatest" %% "scalatest" % "3.2.12" % Test
-)
+ThisBuild / organization := "io.github.krzys9876"
+ThisBuild / organizationName := "krzys9876"
+ThisBuild / organizationHomepage := Some(url("https://github.com/krzys9876"))
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/krzys9876/command-line-reader"),
+    "scm:git@github.com:krzys9876/command-line-reader.git"))
+ThisBuild / developers := List(
+  Developer(
+    id = "krzys9876",
+    name = "Krzysztof Ruta",
+    email = "krzys9876@gmail.com",
+    url = url("https://github.com/krzys9876")))
+ThisBuild / description := "Read command line arguments as strongly typed class fields."
+ThisBuild / licenses := List("MIT" -> new URL("https://opensource.org/license/mit/"))
+ThisBuild / homepage := Some(url("https://github.com/krzys9876/command-line-reader"))
 
-libraryDependencies ++= coreDependencies ++ testDependencies
-
-//https://www.scalatest.org/user_guide/using_the_runner
-// redirect  test results to a file
-Test / testOptions += Tests.Argument("-fW", "target/test-report.txt")
-// parallel execution makes test report unordered and less readable
-Test / parallelExecution := false
-
-// from: https://githubhelp.com/sbt/sbt-assembly
-Compile / run := Defaults.runTask(Compile / fullClasspath, Compile / run / mainClass, Compile / run / runner).evaluated
-Compile / runMain := Defaults.runMainTask(Compile / fullClasspath, Compile / run / runner).evaluated
-
-ThisBuild / scalacOptions ++= Seq("-deprecation", "-feature")
-
+// Remove all additional repository other than Maven Central from POM
+ThisBuild / pomIncludeRepository := { _ => false }
+ThisBuild / publishTo := {
+  val nexus = "https://s01.oss.sonatype.org/"
+  if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
+  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+}
+ThisBuild / publishMavenStyle := true

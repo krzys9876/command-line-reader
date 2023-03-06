@@ -1,16 +1,20 @@
 # Scala command-line reader
 ## Convert arguments to fields within a simple class
 
-This short project is an exercise of scala implicit type conversions with a bit of reflection.
+This short project is an exercise of scala implicit type conversions with a bit of java reflection.
 
-If you're using your code in a way that the key configurations are passed as program arguments (this is what I do with my spark applications) 
-you've probably already came across libraries that hide all the complexity of this (not that simple) task.
+If you're using your code in a way that the key configurations are passed as program arguments 
+(this is what I do with my spark applications) you've probably already came across libraries that 
+hide all the complexity of this (not that simple) task.
 
-I usually try to understand the mechanics of the task before I decide if I should use an external library (who would write his/her own spark???) or write some code on my own.
-This is a result of a study of scala implicits (which I find extremely useful) and java reflection, which I already knew from other projects.
+I usually try to understand the mechanics of the task before I decide if I should use an external library 
+or write some code on my own. This is a result of a study of scala implicits (which I find extremely useful) 
+and java reflection, which I already knew from other projects.
 
-The idea is to allow a developer to create a simplest possible class which contains fields corresponding to every argument. These fields should be easily 
-definable (e.g. required/optional) and accessible (without too much boilerplate). Both scala files fit the 100 lines mark, which I guess qualifies them as _simple_.
+The idea is to allow a developer to create the simplest possible class which contains fields corresponding to every argument. 
+These fields should be easily definable (e.g. required/optional) and accessible (without too much boilerplate). 
+Both scala files are close to 150 lines, which I guess qualifies them as _simple_. There would be even
+less without parsing additional types or printing instructions 
 
 ### Example ###
 
@@ -30,8 +34,8 @@ You may define a class like this:
       parse()
     }
 
-Invocation of the method _parse()_ is actually the only boilerplate (apart from type declaration).
-It fills all the required values just after instantiation of the class. See side note below.
+Invocation of the method <code>parse()</code> at the end of the class body is actually the only boilerplate 
+(apart from type declaration). It fills all the required values just after instantiation of the class. See side note below.
 
 Instantiate the class at the very top of your main class:
 
@@ -39,6 +43,14 @@ Instantiate the class at the very top of your main class:
       val arguments=new SampleArgs(args)
       ...
     }
+
+_NOTE:_ this will throw <code>MissingArgumentException</code> if a required argument is missing!
+
+_NOTE2:_ if a user provides <code>--help</code> as arguments (this is a reserved name!), this will throw <code>PrintHelpAndExit</code> exception 
+with message containing usage instructions. You might leave it as it is, but if you prefer not to print 
+a standard stack trace you should catch it and print instructions in a more friendly manner. Yes, this could
+be done by packing <code>parse</code> method result in e.g. <code>Either</code>, so feel free to modify it 
+if you find exceptions less elegant.
 
 Now you can access values by:
 
@@ -50,7 +62,6 @@ Now you can access values by:
     // or using apply():
     val numOfIterations=arguments.iterations()
 
-NOTE: the above may throw error if a required argument is missing!
 
     // assignent to a optional val with implicit type conversion
     val outFile:Option[String]=arguments.outputFile
@@ -58,6 +69,12 @@ NOTE: the above may throw error if a required argument is missing!
     val outFile:String=arguments.outputFile.optValue.getOrElse("/tmp/any_folder/out.bin")
     
 This is safe (i.e. no error will be thrown) but you have to deal with options yourself.
+
+It was a bit complicated to accept Boolean parameters without values. This will not work if you mix
+boolean parameters with positional ones, particularly when a boolean parameter is provided without value 
+and right before named ones. This will confuse parser and cause incorrect behaviour.
+
+I tend not to mix parameter types (named/positional) if possible. 
 
 ### Side note 1 on immutability ###
 
@@ -84,7 +101,7 @@ Say you define a trait with application-wide arguments:
       val verbose:Argument[Boolean]
     }
 
-Note: there's no _parse_ method.
+Note: there's no <code>parse</code> method.
 
 In your code you pass around a trait not the concrete type. You may make it implicit 
 as well as other dependencies that you have to inject. 
@@ -97,7 +114,7 @@ At runtime, you may use the above class:
         parse()
     }
 
-Note: You have to use _parse()_ here.
+Note: You have to use <code>parse()</code> here.
 
 For testing, you may define a separate class in a different way:
 
@@ -109,9 +126,9 @@ For testing, you may define a separate class in a different way:
       val verbose:Argument[Boolean]=Argument.ignored
     }
 
-This is just a different convention. You explicitly set configuration values
-and more importantly by using _ignored_ you show that this parameter is not 
-used during testing. Since there is nothing to be parsed, you don't need the _parse_ method.
+This is just a different convention. By using <code>static</code> you explicitly set configuration values
+and more importantly by using <code>ignored</code> you show that this parameter is not 
+used during testing. Since there is nothing to be parsed, you don't need the <code>parse</code> method.
 
 I find this more verbose.
 
@@ -119,8 +136,8 @@ I find this more verbose.
 
 Depending on personal preferences you may find useful arguments of very specific types, e.g. Double from scientific notation. 
 To add new type all you have to do is:
-1. Define a new parsing method in _RawArgument_ class, e.g. _asYourType_. It should convert the textual _value_ into option of the type you're adding. 
-2. Add another implicit object to _RawArgumentConverter_, which overrides _toValue_ method. It should invoke _asYourType_ method (you need _flatMap_ here since you must map option to option). 
+1. Define a new parsing method in <code>RawArgument</code> class, e.g. <code>asYourType</code>. It should convert the textual <code>value</code> into option of the type you're adding. 
+2. Add another implicit object to <code>RawArgumentConverter</code>, which overrides <code>toValue</code> method. It should invoke _asYourType_ method (you need _flatMap_ here since you must map option to option). 
 
 This would look like:
 
@@ -137,8 +154,8 @@ This would look like:
       }
     }
 
-Ypu could argue that value conversion and exposing implicit object could 
-be combined RawArgumentConverter. Still I prefer to separate these two reponsibilities, even 
+You could argue that value conversion and exposing implicit object could 
+be combined <code>RawArgumentConverter</code>. Still I prefer to separate these two responsibilities, even 
 if it generates some more boilerplate.
 
 Now you can define an argument as double:
@@ -147,3 +164,4 @@ Now you can define an argument as double:
       val doubleValue:Argument[Double]=Argument.required
       parse()
     }
+

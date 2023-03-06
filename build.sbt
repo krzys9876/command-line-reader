@@ -1,5 +1,5 @@
 name := "command-line-reader"
-ThisBuild / version := "1.0.0"
+ThisBuild / version := "1.1.0"
 ThisBuild / versionScheme := Some("early-semver")
 
 scalaVersion := "2.13.10"

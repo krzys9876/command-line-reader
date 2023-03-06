@@ -1,6 +1,6 @@
-package org.kr.args
-package test
+package org.kr.args.test
 
+import org.kr.args.{ArgsProcessor, RawArgument}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 
@@ -96,6 +96,15 @@ class ArgsProcessorTest extends AnyFeatureSpec with GivenWhenThen {
       val processed = new ArgsProcessor(args)
       Then("arguments with empty value are correctly passed")
       assert(processed.named.toSet == Set(RawArgument("AAA",""),RawArgument("BBB","2"),RawArgument("CCC","")))
+      assert(processed.positional.isEmpty)
+    }
+    Scenario("single named boolean arg without a value") {
+      Given("named boolean arg w/o value (i.e. true)")
+      val args = Array("--aaa")
+      When("args are processed")
+      val processed = new ArgsProcessor(args)
+      Then("argument with empty value is correctly passed")
+      assert(processed.named.toSet == Set(RawArgument("AAA", "")))
       assert(processed.positional.isEmpty)
     }
   }
